@@ -3,8 +3,22 @@ const fields = ['governorate','type','area'];
 const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const esc = s => String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let page = 1; const pageSize = 12;
-function fill(id, index) { const select=$(id); [...new Set(providers.map(p=>p[index]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr')).forEach(value=>select.add(new Option(value,value))); }
-fill('governorate',0); fill('type',1); fill('area',3);
+function updateFilters() {
+ const selections = { governorate: $('governorate').value, type: $('type').value, area: $('area').value };
+ const definitions = [
+  { id: 'governorate', index: 0, label: 'Tous les gouvernorats', matches: () => true },
+  { id: 'type', index: 1, label: 'Tous les types', matches: p => !selections.governorate || p[0] === selections.governorate },
+  { id: 'area', index: 3, label: 'Tous les pôles', matches: p => (!selections.governorate || p[0] === selections.governorate) && (!selections.type || p[1] === selections.type) }
+ ];
+ for (const { id, index, label, matches } of definitions) {
+  const values = [...new Set(providers.filter(matches).map(p => p[index]).filter(Boolean))].sort((a,b) => a.localeCompare(b,'fr'));
+  if (!values.includes(selections[id])) selections[id] = '';
+  const select = $(id);
+  select.replaceChildren(new Option(label, ''), ...values.map(value => new Option(value, value)));
+  select.value = selections[id];
+ }
+}
+updateFilters();
 function render(){
  const query=norm($('search').value.trim());
  let found=providers.filter(p=>(!query || norm(p.join(' ')).includes(query)) && (! $('governorate').value || p[0]===$('governorate').value) && (!$('type').value || p[1]===$('type').value) && (!$('area').value || p[3]===$('area').value));
@@ -16,8 +30,8 @@ function render(){
  $('empty').hidden=found.length>0; $('page-info').textContent=found.length ? `Page ${page} sur ${pages} · ${found.length.toLocaleString('fr-FR')} résultats` : '';
  $('prev').disabled=page===1; $('next').disabled=page===pages;
 }
-function reset(){ $('search').value=''; fields.forEach(id=>$(id).value=''); $('sort').value='source'; page=1; render(); }
-$('search').addEventListener('input',()=>{page=1;render()}); [...fields,'sort'].forEach(id=>$(id).addEventListener('change',()=>{page=1;render()})); $('reset').onclick=reset; $('clear-empty').onclick=reset;
+function reset(){ $('search').value=''; fields.forEach(id=>$(id).value=''); $('sort').value='source'; page=1; updateFilters(); render(); }
+$('search').addEventListener('input',()=>{page=1;render()}); fields.forEach(id=>$(id).addEventListener('change',()=>{page=1;updateFilters();render()})); $('sort').addEventListener('change',()=>{page=1;render()}); $('reset').onclick=reset; $('clear-empty').onclick=reset;
 $('prev').onclick=()=>{page--;render();$('results').scrollIntoView({behavior:'smooth',block:'start'})}; $('next').onclick=()=>{page++;render();$('results').scrollIntoView({behavior:'smooth',block:'start'})};
 $('total').textContent=providers.length.toLocaleString('fr-FR'); render();
 
