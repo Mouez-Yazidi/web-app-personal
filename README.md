@@ -29,4 +29,3 @@ Alternatively, upload the contents of `dist/` to any static web host, with `inde
 ## Update the directory
 
 Place one replacement `.xlsx` file in the parent folder and run `python extract.py` from this project directory. The extractor expects the same six-column layout and shared-string format as the original workbook. Check the output in a browser, then commit and push the updated `dist/data.js` to redeploy. The original workbook is not included in this repository.
-
